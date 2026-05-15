@@ -1,12 +1,12 @@
 "use client";
 
 import { MapPin, Navigation, Plus, Search, SlidersHorizontal, User } from "lucide-react";
-import Link from "next/link";
 import { useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { routes } from "@/config/routes";
 import { PRICE_FILTER_CHIPS } from "@/constants/filters";
 import { DealMap } from "@/features/maps/components/DealMap";
+import { DropFeedModal } from "@/features/maps/components/DropFeedModal";
 import { MapFilterFeedsModal } from "@/features/maps/components/MapFilterFeedsModal";
 import {
   MapRestaurantSidePanel,
@@ -44,6 +44,7 @@ export function MapExploreScreen() {
   const setSearchQuery = useMapExploreStore((s) => s.setSearchQuery);
   const setSelectedRestaurantId = useMapExploreStore((s) => s.setSelectedRestaurantId);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [dropFeedOpen, setDropFeedOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const searchFieldRef = useRef<HTMLDivElement>(null);
   const mapHeaderChromeRef = useRef<HTMLElement>(null);
@@ -333,18 +334,24 @@ export function MapExploreScreen() {
           </div>
         )}
 
-        {!selected && (
-          <div className="pointer-events-none absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] z-[25] flex justify-end">
-            <Link
-              href={routes.community}
-              className="pointer-events-auto flex max-w-full min-w-0 items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_8px_24px_rgba(230,74,25,0.45)] transition hover:brightness-105 active:scale-[0.98] sm:max-w-[20rem] sm:px-5"
+        {!sidePanelOpen && !selected && (
+          <div
+            className={cn(
+              "pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] z-[41] flex justify-end",
+              "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]",
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => setDropFeedOpen(true)}
+              className="pointer-events-auto flex max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_8px_24px_rgba(230,74,25,0.45)] transition hover:brightness-105 active:scale-[0.98] sm:max-w-[20rem] sm:px-5"
               style={{ backgroundColor: ACCENT }}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20">
                 <Plus className="h-4 w-4 text-white" strokeWidth={2.5} />
               </span>
               <span className="min-w-0 truncate pr-0.5">Found a ripper?</span>
-            </Link>
+            </button>
           </div>
         )}
       </div>
@@ -356,6 +363,8 @@ export function MapExploreScreen() {
           onClose={() => setSidePanelOpen(false)}
         />
       )}
+
+      <DropFeedModal open={dropFeedOpen} onClose={() => setDropFeedOpen(false)} />
     </div>
   );
 }

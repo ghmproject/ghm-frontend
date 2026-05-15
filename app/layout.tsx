@@ -44,7 +44,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="flex min-h-full w-full min-w-0 flex-col overflow-x-hidden bg-[#faf8f5] font-sans text-neutral-900"
+        className="flex min-h-full w-full min-w-0 flex-col overflow-x-hidden bg-[#fff9f2] font-sans text-neutral-900"
         suppressHydrationWarning
       >
         <QueryProvider>{children}</QueryProvider>
