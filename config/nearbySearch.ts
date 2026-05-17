@@ -7,8 +7,8 @@ import { isNearBrisbane } from "@/features/maps/utils/nearBrisbane";
  * → West End / South Brisbane, Queensland, Australia (not Pakistan).
  */
 export const BRISBANE_LISTINGS_HUB: LatLng = {
-  lat: -27.4095556,
-  lng: 153.0639167,
+  lat: -27.470030,
+  lng: 153.022980,
 };
 
 export const nearbySearchConfig = {
