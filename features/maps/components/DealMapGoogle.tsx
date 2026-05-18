@@ -7,14 +7,22 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { Crown } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { env } from "@/config/env";
+import { MapCoordinateMenu } from "@/features/maps/components/MapCoordinateMenu";
+import { MapDrivingRouteGoogle } from "@/features/maps/components/MapDrivingRouteGoogle";
+import { MapRoutePicker } from "@/features/maps/components/MapRoutePicker";
+import { UserLocationMarkerGoogle } from "@/features/maps/components/UserLocationMarker";
 import type { DealMapProps } from "@/features/maps/map-types";
+import { useMapCoordinateMenu } from "@/features/maps/hooks/useMapCoordinateMenu";
+import { useRouteSelection } from "@/features/maps/hooks/useRouteSelection";
 import { isNearBrisbane, mapCameraCenter } from "@/features/maps/utils/nearBrisbane";
 import {
   BRISBANE_BOUNDS,
   DEFAULT_MAP_ZOOM,
+  MAP_MAX_ZOOM,
+  MAP_MIN_ZOOM,
   SILVER_MAP_STYLE,
 } from "@/lib/maps/googleMaps";
 import { cn } from "@/lib/utils/cn";
@@ -35,12 +43,35 @@ function RecenterOnUser({
   return null;
 }
 
+function MapCoordinateLayer({
+  onOpen,
+}: {
+  onOpen: (clientX: number, clientY: number, lat: number, lng: number) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+    const listener = map.addListener("contextmenu", (e: google.maps.MapMouseEvent) => {
+      const dom = e.domEvent;
+      if (!dom || !(dom instanceof MouseEvent)) return;
+      dom.preventDefault();
+      const latLng = e.latLng;
+      if (!latLng) return;
+      onOpen(dom.clientX, dom.clientY, latLng.lat(), latLng.lng());
+    });
+    return () => google.maps.event.removeListener(listener);
+  }, [map, onOpen]);
+
+  return null;
+}
+
 function MapFlyToSearch({ target }: { target: google.maps.LatLngLiteral | null | undefined }) {
   const map = useMap();
   useEffect(() => {
     if (!map || !target) return;
     const current = map.getZoom() ?? DEFAULT_MAP_ZOOM;
-    const z = current < 15 ? 15 : current;
+    const z = Math.min(current < 15 ? 15 : current, MAP_MAX_ZOOM);
     map.panTo(target);
     map.setZoom(z);
   }, [map, target?.lat, target?.lng]);
@@ -114,19 +145,32 @@ export function DealMapGoogle({
   selectedId,
   onSelect,
   flyTo,
+  routeFrom,
 }: DealMapProps) {
   const center = mapCameraCenter(userCoords);
   const mapId = env.googleMapId.trim() || undefined;
   const showUserHere = isNearBrisbane(userCoords);
+  const { menu: coordMenu, openAt, openFromEvent, close: closeCoordMenu } = useMapCoordinateMenu();
+
+  const routeTo = useMemo(() => {
+    if (!selectedId) return null;
+    return restaurants.find((r) => r.id === selectedId)?.position ?? null;
+  }, [restaurants, selectedId]);
+
+  const { options: routeOptions, selectedIndex, setSelectedIndex } = useRouteSelection(
+    routeFrom,
+    routeTo,
+  );
 
   return (
+    <div className="relative h-full w-full min-h-0">
     <APIProvider apiKey={env.googleMapsApiKey} libraries={["marker"]}>
       <Map
         className="h-full w-full min-h-0"
         defaultCenter={center}
         defaultZoom={DEFAULT_MAP_ZOOM}
-        minZoom={11}
-        maxZoom={19}
+        minZoom={MAP_MIN_ZOOM}
+        maxZoom={MAP_MAX_ZOOM}
         restriction={{
           latLngBounds: BRISBANE_BOUNDS,
           strictBounds: true,
@@ -139,14 +183,13 @@ export function DealMapGoogle({
       >
         <MapFlyToSearch target={flyTo ?? null} />
         <RecenterOnUser coords={userCoords} flyTo={flyTo} />
+        <MapCoordinateLayer onOpen={openAt} />
+        <MapDrivingRouteGoogle options={routeOptions} selectedIndex={selectedIndex} />
         {showUserHere && userCoords && (
-          <AdvancedMarker position={userCoords} zIndex={5}>
-            <div
-              className="h-3.5 w-3.5 rounded-full border-[3px] border-white shadow-md"
-              style={{ backgroundColor: "#E64A19" }}
-              title="You"
-            />
-          </AdvancedMarker>
+          <UserLocationMarkerGoogle
+            coords={userCoords}
+            onContextMenu={(e) => openFromEvent(e, userCoords.lat, userCoords.lng)}
+          />
         )}
         {restaurants.map((r) => (
           <PriceMarker
@@ -157,6 +200,15 @@ export function DealMapGoogle({
           />
         ))}
       </Map>
+      <MapCoordinateMenu menu={coordMenu} onClose={closeCoordMenu} />
     </APIProvider>
+    {routeOptions.length > 0 && (
+      <MapRoutePicker
+        options={routeOptions}
+        selectedIndex={selectedIndex}
+        onSelect={setSelectedIndex}
+      />
+    )}
+    </div>
   );
 }

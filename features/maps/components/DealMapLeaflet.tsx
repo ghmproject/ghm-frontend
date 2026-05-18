@@ -6,16 +6,27 @@ import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
 import type { LatLng } from "@/features/restaurants/types/restaurant";
 
+import { MapCoordinateMenu } from "@/features/maps/components/MapCoordinateMenu";
+import { MapDrivingRouteLeaflet } from "@/features/maps/components/MapDrivingRouteLeaflet";
+import { MapRoutePicker } from "@/features/maps/components/MapRoutePicker";
+import { MapZoomGuard } from "@/features/maps/components/MapZoomGuard";
 import type { DealMapProps } from "@/features/maps/map-types";
+import { useMapCoordinateMenu } from "@/features/maps/hooks/useMapCoordinateMenu";
+import { useRouteSelection } from "@/features/maps/hooks/useRouteSelection";
 import { isNearBrisbane, mapCameraCenter } from "@/features/maps/utils/nearBrisbane";
 import { CARTO_LIGHT_TILES } from "@/lib/maps/leafletTiles";
-import { DEFAULT_MAP_ZOOM, BRISBANE_MAX_BOUNDS } from "@/lib/maps/googleMaps";
+import {
+  BRISBANE_MAX_BOUNDS,
+  DEFAULT_MAP_ZOOM,
+  MAP_MAX_ZOOM,
+  MAP_MIN_ZOOM,
+} from "@/lib/maps/googleMaps";
 import { formatPriceCompact } from "@/lib/utils/formatCurrency";
 
 import "leaflet/dist/leaflet.css";
 
 const ACCENT = "#FF5722";
-const ACCENT_DARK = "#E64A19";
+const USER_PIN_COLOR = "#E65100";
 
 function priceTeardropIcon(
   restaurant: DealMapProps["restaurants"][number],
@@ -74,18 +85,48 @@ function priceTeardropIcon(
   });
 }
 
-const userIcon = L.divIcon({
-  className: "ghm-user-dot",
-  html: `<div style="width:14px;height:14px;border-radius:9999px;background:${ACCENT_DARK};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)"></div>`,
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
+function userLocationIcon(): L.DivIcon {
+  const pinSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="${USER_PIN_COLOR}" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 2px 6px rgba(0,0,0,0.28))">
+      <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+      <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="${USER_PIN_COLOR}" stroke-width="1.5"/>
+    </svg>`;
+
+  return L.divIcon({
+    html: `<div class="ghm-user-pin" style="display:flex;align-items:center;justify-content:center;cursor:context-menu">${pinSvg}</div>`,
+    className: "ghm-user-pin-wrap",
+    iconSize: [36, 36],
+    iconAnchor: [18, 34],
+  });
+}
+
+function MapCoordinateLayer({
+  onOpen,
+}: {
+  onOpen: (clientX: number, clientY: number, lat: number, lng: number) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+    const onContextMenu = (e: L.LeafletMouseEvent) => {
+      e.originalEvent.preventDefault();
+      onOpen(e.originalEvent.clientX, e.originalEvent.clientY, e.latlng.lat, e.latlng.lng);
+    };
+    map.on("contextmenu", onContextMenu);
+    return () => {
+      map.off("contextmenu", onContextMenu);
+    };
+  }, [map, onOpen]);
+
+  return null;
+}
 
 function MapFlyTo({ target }: { target: LatLng | null | undefined }) {
   const map = useMap();
   useEffect(() => {
     if (!map || !target) return;
-    const z = Math.max(map.getZoom(), 15);
+    const z = Math.min(Math.max(map.getZoom(), 15), MAP_MAX_ZOOM);
     map.setView([target.lat, target.lng], z, { animate: true });
   }, [map, target?.lat, target?.lng]);
   return null;
@@ -97,10 +138,22 @@ export function DealMapLeaflet({
   selectedId,
   onSelect,
   flyTo,
+  routeFrom,
 }: DealMapProps) {
   const mapCenter = mapCameraCenter(userCoords);
   const center: [number, number] = [mapCenter.lat, mapCenter.lng];
   const showUserHere = isNearBrisbane(userCoords);
+  const { menu: coordMenu, openAt, openFromEvent, close: closeCoordMenu } = useMapCoordinateMenu();
+
+  const routeTo = useMemo(() => {
+    if (!selectedId) return null;
+    return restaurants.find((r) => r.id === selectedId)?.position ?? null;
+  }, [restaurants, selectedId]);
+
+  const { options: routeOptions, selectedIndex, setSelectedIndex } = useRouteSelection(
+    routeFrom,
+    routeTo,
+  );
 
   const icons = useMemo(() => {
     const m = new Map<string, L.DivIcon>();
@@ -110,23 +163,49 @@ export function DealMapLeaflet({
     return m;
   }, [restaurants, selectedId]);
 
+  const userIcon = useMemo(() => userLocationIcon(), []);
+
   return (
     <div className="relative z-0 flex h-full min-h-0 w-full flex-col bg-[#dcd9d4]">
       <MapContainer
         center={center}
         zoom={DEFAULT_MAP_ZOOM}
-        minZoom={11}
-        maxZoom={19}
+        minZoom={MAP_MIN_ZOOM}
+        maxZoom={MAP_MAX_ZOOM}
+        zoomSnap={1}
+        zoomDelta={1}
         maxBounds={BRISBANE_MAX_BOUNDS}
         maxBoundsViscosity={1}
         className="ghm-leaflet-map z-0 h-full w-full min-h-0 flex-1 rounded-none [&_.leaflet-control-attribution]:rounded-lg [&_.leaflet-control-attribution]:border-0 [&_.leaflet-control-attribution]:bg-white/80 [&_.leaflet-control-attribution]:text-[9px] [&_.leaflet-control-attribution]:shadow-sm [&_.leaflet-control-attribution]:backdrop-blur-sm [&_.leaflet-control-attribution_a]:text-neutral-500"
         scrollWheelZoom
         zoomControl={false}
       >
-        <TileLayer attribution={CARTO_LIGHT_TILES.attribution} url={CARTO_LIGHT_TILES.url} />
+        <TileLayer
+          attribution={CARTO_LIGHT_TILES.attribution}
+          url={CARTO_LIGHT_TILES.url}
+          subdomains={CARTO_LIGHT_TILES.subdomains}
+          maxZoom={CARTO_LIGHT_TILES.maxZoom}
+          maxNativeZoom={CARTO_LIGHT_TILES.maxNativeZoom}
+          updateWhenZooming={false}
+          updateWhenIdle
+        />
+        <MapZoomGuard />
         <MapFlyTo target={flyTo} />
+        <MapCoordinateLayer onOpen={openAt} />
+        <MapDrivingRouteLeaflet options={routeOptions} selectedIndex={selectedIndex} />
         {showUserHere && userCoords && (
-          <Marker position={[userCoords.lat, userCoords.lng]} icon={userIcon} interactive={false} />
+          <Marker
+            position={[userCoords.lat, userCoords.lng]}
+            icon={userIcon}
+            zIndexOffset={600}
+            eventHandlers={{
+              contextmenu: (e) => {
+                const ev = e.originalEvent;
+                openFromEvent(ev, userCoords.lat, userCoords.lng);
+                L.DomEvent.stopPropagation(e);
+              },
+            }}
+          />
         )}
         {restaurants.map((r) => (
           <Marker
@@ -138,6 +217,14 @@ export function DealMapLeaflet({
           />
         ))}
       </MapContainer>
+      {routeOptions.length > 0 && (
+        <MapRoutePicker
+          options={routeOptions}
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
+        />
+      )}
+      <MapCoordinateMenu menu={coordMenu} onClose={closeCoordMenu} />
     </div>
   );
 }

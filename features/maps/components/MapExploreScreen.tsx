@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { MapPin, Navigation, Plus, Search, SlidersHorizontal, User } from "lucide-react";
 import { useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -341,6 +341,7 @@ export function MapExploreScreen() {
             selectedId={selectedRestaurantId}
             onSelect={setSelectedRestaurantId}
             flyTo={flyTo}
+            routeFrom={distanceOrigin}
           />
         </div>
 

@@ -33,6 +33,13 @@ export const DEFAULT_MAP_CENTER: google.maps.LatLngLiteral = {
 
 export const DEFAULT_MAP_ZOOM = 14;
 
+/** User pinch/zoom limits (Google Maps + Leaflet container). */
+export const MAP_MIN_ZOOM = 11;
+/** CARTO Positron PNG tiles — safe max (beyond this tiles go blank). */
+export const MAP_TILE_MAX_ZOOM = 19;
+/** Must match tile max — do not allow overscale or the map turns grey. */
+export const MAP_MAX_ZOOM = MAP_TILE_MAX_ZOOM;
+
 /** Greater Brisbane / SEQ — panning restricted to this box. */
 export const BRISBANE_BOUNDS: google.maps.LatLngBoundsLiteral = {
   south: -27.95,
