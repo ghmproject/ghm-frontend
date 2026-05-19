@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ThumbsUp } from "lucide-react";
+import { MessageCircle, ThumbsUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { routes } from "@/config/routes";
@@ -35,23 +35,27 @@ function NoteAvatar({ name }: { name: string }) {
 
 function NoteActions({
   likes,
+  replyCount,
   onReply,
 }: {
   likes: number;
+  replyCount: number;
   onReply: () => void;
 }) {
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-neutral-500">
-      <span className="inline-flex items-center gap-1">
-        <ThumbsUp className="h-3.5 w-3.5 text-neutral-400" aria-hidden />
+    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-neutral-500">
+      <span className="inline-flex items-center gap-1.5">
+        <ThumbsUp className="h-4 w-4" aria-hidden />
         {likes}
       </span>
       <button
         type="button"
         onClick={onReply}
-        className="font-semibold text-neutral-600 transition hover:text-neutral-900"
+        className="inline-flex items-center gap-1.5 transition hover:text-neutral-700"
+        aria-label={replyCount > 0 ? `Reply · ${replyCount} replies` : "Reply"}
       >
-        Reply
+        <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
+        {replyCount > 0 ? replyCount : null}
       </button>
     </div>
   );
@@ -127,6 +131,8 @@ export function RestaurantCommunityNotesSection({
     setReplyDraft("");
   };
 
+  const isReplying = replyingToIndex !== null;
+
   return (
     <section className={cn("mt-6", className)} aria-labelledby={`community-notes-${restaurantId}`}>
       <p
@@ -150,7 +156,11 @@ export function RestaurantCommunityNotesSection({
                     <span className="font-normal text-neutral-500"> · {note.ago}</span>
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-neutral-700">{note.body}</p>
-                  <NoteActions likes={note.likes} onReply={() => startReply(index)} />
+                  <NoteActions
+                    likes={note.likes}
+                    replyCount={note.replies?.length ?? 0}
+                    onReply={() => startReply(index)}
+                  />
                 </div>
               </div>
 
@@ -188,11 +198,11 @@ export function RestaurantCommunityNotesSection({
                   </label>
                   <textarea
                     id={`community-reply-${restaurantId}-${index}`}
-                    rows={2}
+                    rows={1}
                     value={replyDraft}
                     onChange={(e) => setReplyDraft(e.target.value)}
                     placeholder={`Reply to ${note.author}…`}
-                    className="w-full resize-none rounded-xl border border-neutral-200/90 bg-white px-3 py-2.5 text-sm leading-relaxed text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-0"
+                    className="w-full resize-none rounded-xl border border-neutral-200/90 bg-white px-3 py-2 text-sm leading-snug text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-0"
                     autoFocus
                   />
                   <div className="flex flex-wrap gap-2">
@@ -231,21 +241,21 @@ export function RestaurantCommunityNotesSection({
             href={loginHref}
             className="mt-2 inline-block text-sm font-medium text-[#2563a8] underline-offset-2 hover:underline"
           >
-            Login / Sign Up
+            Login
           </Link>
         </div>
-      ) : (
+      ) : !isReplying ? (
         <div className={cn("space-y-3", notes.length > 0 ? "mt-4" : "mt-3")}>
           <label htmlFor={`community-note-${restaurantId}`} className="sr-only">
             Add a community note
           </label>
           <textarea
             id={`community-note-${restaurantId}`}
-            rows={3}
+            rows={2}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Share a tip about price, portion, or cash only…"
-            className="w-full resize-none rounded-2xl border border-neutral-200/90 bg-white px-3.5 py-3 text-sm leading-relaxed text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-0"
+            className="w-full resize-none rounded-2xl border border-neutral-200/90 bg-white px-3.5 py-2.5 text-sm leading-snug text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-0"
           />
           <button
             type="button"
@@ -256,7 +266,7 @@ export function RestaurantCommunityNotesSection({
             Post note
           </button>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

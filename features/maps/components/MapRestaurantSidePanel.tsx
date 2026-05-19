@@ -117,7 +117,6 @@ export function MapRestaurantSidePanel({
             <RestaurantImage
               src={r.imageUrl}
               alt={r.name}
-              priority
               sizes="(max-width: 640px) 100vw, 400px"
             />
             <div className="absolute left-3 right-3 top-3 z-[1] flex items-start justify-between gap-2">

@@ -4,6 +4,10 @@ import { X } from "lucide-react";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 
+import {
+  FEED_CATEGORIES,
+  type FeedCategoryId,
+} from "@/features/community/constants/feedCategories";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#FF5722";
@@ -14,15 +18,27 @@ const fieldClass =
 const labelClass =
   "mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500";
 
+export type FeedComposerMode = "feed" | "comment";
+
 export type FeedCommentModalProps = {
   open: boolean;
   onClose: () => void;
+  mode: FeedComposerMode;
   defaultTitle?: string;
+  defaultCategory?: FeedCategoryId;
 };
 
-export function FeedCommentModal({ open, onClose, defaultTitle = "" }: FeedCommentModalProps) {
+export function FeedCommentModal({
+  open,
+  onClose,
+  mode,
+  defaultTitle = "",
+  defaultCategory,
+}: FeedCommentModalProps) {
   const titleId = useId();
+  const isFeed = mode === "feed";
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<FeedCategoryId>("finds");
   const [comment, setComment] = useState("");
 
   useEffect(() => {
@@ -46,19 +62,31 @@ export function FeedCommentModal({ open, onClose, defaultTitle = "" }: FeedComme
   useEffect(() => {
     if (!open) {
       setTitle("");
+      setCategory("finds");
       setComment("");
       return;
     }
-    setTitle(defaultTitle);
-  }, [open, defaultTitle]);
+    if (isFeed) {
+      setTitle(defaultTitle);
+      setCategory(defaultCategory ?? "finds");
+    }
+  }, [open, defaultTitle, defaultCategory, isFeed]);
 
   if (!open) return null;
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    console.info("Feed comment:", { title: title.trim(), comment: comment.trim() });
+    console.info(
+      isFeed ? "Feed post:" : "Feed comment:",
+      isFeed
+        ? { title: title.trim(), category, comment: comment.trim() }
+        : { title: defaultTitle.trim(), comment: comment.trim() },
+    );
     onClose();
   };
+
+  const heading = isFeed ? "Add feed" : "Add comment";
+  const submitLabel = isFeed ? "Post feed" : "Post comment";
 
   const ui = (
     <>
@@ -96,7 +124,7 @@ export function FeedCommentModal({ open, onClose, defaultTitle = "" }: FeedComme
               </button>
             </div>
             <h2 id={titleId} className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.65rem]">
-              Add comment
+              {heading}
             </h2>
           </div>
         </header>
@@ -108,26 +136,59 @@ export function FeedCommentModal({ open, onClose, defaultTitle = "" }: FeedComme
           )}
         >
           <div className="mb-4">
-            <label htmlFor="feed-comment-title" className={labelClass}>
+            <label htmlFor="feed-composer-title" className={labelClass}>
               Title
             </label>
-            <input
-              id="feed-comment-title"
-              type="text"
-              required
-              placeholder="e.g. Found $6 pho in the Valley!"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className={fieldClass}
-            />
+            {isFeed ? (
+              <input
+                id="feed-composer-title"
+                type="text"
+                required
+                placeholder="e.g. Found $6 pho in the Valley!"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className={fieldClass}
+              />
+            ) : (
+              <input
+                id="feed-composer-title"
+                type="text"
+                readOnly
+                value={defaultTitle}
+                className={cn(fieldClass, "cursor-default text-neutral-700")}
+                tabIndex={-1}
+                aria-readonly
+              />
+            )}
           </div>
 
+          {isFeed ? (
+          <div className="mb-4">
+            <label htmlFor="feed-composer-category" className={labelClass}>
+              Category
+            </label>
+            <select
+              id="feed-composer-category"
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value as FeedCategoryId)}
+              className={cn(fieldClass, "cursor-pointer appearance-none")}
+            >
+              {FEED_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          ) : null}
+
           <div className="mb-5">
-            <label htmlFor="feed-comment-body" className={labelClass}>
+            <label htmlFor="feed-composer-body" className={labelClass}>
               Comment
             </label>
             <textarea
-              id="feed-comment-body"
+              id="feed-composer-body"
               rows={4}
               required
               placeholder="Share your take…"
@@ -142,7 +203,7 @@ export function FeedCommentModal({ open, onClose, defaultTitle = "" }: FeedComme
             className="flex h-12 w-full items-center justify-center rounded-2xl text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(255,87,34,0.35)] transition hover:brightness-105 active:scale-[0.99] sm:h-11 sm:text-sm"
             style={{ backgroundColor: ACCENT }}
           >
-            Submit
+            {submitLabel}
           </button>
         </form>
       </div>

@@ -29,6 +29,8 @@ export function RestaurantImage({
       fill
       sizes={sizes}
       priority={priority}
+      loading={priority ? undefined : "lazy"}
+      fetchPriority={priority ? "high" : "low"}
       className={cn("object-cover", className)}
     />
   );

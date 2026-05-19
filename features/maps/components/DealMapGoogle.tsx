@@ -20,7 +20,6 @@ import type { DealMapProps } from "@/features/maps/map-types";
 import { useMapCoordinateMenu } from "@/features/maps/hooks/useMapCoordinateMenu";
 import { useRouteSelection } from "@/features/maps/hooks/useRouteSelection";
 import {
-  coordsNear,
   isInBrisbaneBounds,
   isNearBrisbane,
   mapCameraCenter,
@@ -191,7 +190,7 @@ export function DealMapGoogle({
   const showGpsPin =
     userCoords != null &&
     isInBrisbaneBounds(userCoords) &&
-    (!routeFrom || !coordsNear(userCoords, routeFrom));
+    !routeActive;
 
   const showRouteYou = routeActive && routeFrom != null;
 

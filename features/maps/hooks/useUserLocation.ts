@@ -9,6 +9,10 @@ type UserLocationState =
   | { status: "ready"; coords: LatLng }
   | { status: "denied" | "unavailable"; message: string };
 
+/**
+ * Requests GPS only when permission is already granted (no prompt on first visit).
+ * Otherwise call `refresh()` after the user taps Enable location.
+ */
 export function useUserLocation() {
   const [state, setState] = useState<UserLocationState>({ status: "idle" });
 
@@ -37,7 +41,23 @@ export function useUserLocation() {
   }, []);
 
   useEffect(() => {
-    request();
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+    let cancelled = false;
+
+    const tryGrantedLocate = async () => {
+      try {
+        const perm = await navigator.permissions.query({ name: "geolocation" });
+        if (!cancelled && perm.state === "granted") request();
+      } catch {
+        /* Permissions API unavailable — user enables location manually */
+      }
+    };
+
+    void tryGrantedLocate();
+    return () => {
+      cancelled = true;
+    };
   }, [request]);
 
   const coords = state.status === "ready" ? state.coords : null;

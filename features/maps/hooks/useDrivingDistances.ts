@@ -32,13 +32,16 @@ async function fetchDrivingDistances(
 export function useDrivingDistances(
   origin: LatLng | null,
   restaurants: Restaurant[],
+  options?: { enabled?: boolean },
 ) {
   const destKey = restaurants.map((r) => r.id).join(",");
+  const enabled =
+    (options?.enabled ?? true) && origin != null && restaurants.length > 0;
 
   const query = useQuery({
     queryKey: ["driving-distances", origin?.lat, origin?.lng, destKey],
     queryFn: () => fetchDrivingDistances(origin!, restaurants),
-    enabled: origin != null && restaurants.length > 0,
+    enabled,
     staleTime: 5 * 60_000,
   });
 

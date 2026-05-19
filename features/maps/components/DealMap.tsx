@@ -3,28 +3,35 @@
 import dynamic from "next/dynamic";
 
 import { env } from "@/config/env";
+import { MapLoadingSkeleton } from "@/features/maps/components/MapLoadingSkeleton";
 import type { DealMapProps } from "@/features/maps/map-types";
-import { DealMapGoogle } from "@/features/maps/components/DealMapGoogle";
+
+const mapLoading = () => <MapLoadingSkeleton />;
+
+const DealMapGoogle = dynamic(
+  () =>
+    import("@/features/maps/components/DealMapGoogle").then((m) => ({
+      default: m.DealMapGoogle,
+    })),
+  { ssr: false, loading: mapLoading },
+);
 
 const DealMapLeaflet = dynamic(
-  () => import("@/features/maps/components/DealMapLeaflet").then((m) => m.DealMapLeaflet),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full min-h-[50vh] flex-1 items-center justify-center bg-[#eceae6] text-sm text-neutral-500">
-        Loading map…
-      </div>
-    ),
-  },
+  () =>
+    import("@/features/maps/components/DealMapLeaflet").then((m) => ({
+      default: m.DealMapLeaflet,
+    })),
+  { ssr: false, loading: mapLoading },
 );
 
 export type { DealMapProps } from "@/features/maps/map-types";
 
 export function DealMap(props: DealMapProps) {
-  const tree = !env.googleMapsApiKey.trim() ? (
-    <DealMapLeaflet {...props} />
-  ) : (
-    <DealMapGoogle {...props} />
+  const useGoogle = env.googleMapsApiKey.trim().length > 0;
+  const MapImpl = useGoogle ? DealMapGoogle : DealMapLeaflet;
+  return (
+    <div className="h-full min-h-0 w-full" role="region" aria-label="Restaurant map">
+      <MapImpl {...props} />
+    </div>
   );
-  return <div className="h-full min-h-0 w-full">{tree}</div>;
 }

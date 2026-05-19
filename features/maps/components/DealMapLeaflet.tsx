@@ -16,11 +16,7 @@ import { RouteYouMarkerLeaflet } from "@/features/maps/components/RouteYouMarker
 import type { DealMapProps } from "@/features/maps/map-types";
 import { useMapCoordinateMenu } from "@/features/maps/hooks/useMapCoordinateMenu";
 import { useRouteSelection } from "@/features/maps/hooks/useRouteSelection";
-import {
-  coordsNear,
-  isInBrisbaneBounds,
-  mapCameraCenter,
-} from "@/features/maps/utils/nearBrisbane";
+import { isInBrisbaneBounds, mapCameraCenter } from "@/features/maps/utils/nearBrisbane";
 import { CARTO_LIGHT_TILES } from "@/lib/maps/leafletTiles";
 import {
   BRISBANE_MAX_BOUNDS,
@@ -159,7 +155,7 @@ export function DealMapLeaflet({
   const showGpsPin =
     userCoords != null &&
     isInBrisbaneBounds(userCoords) &&
-    (!routeFrom || !coordsNear(userCoords, routeFrom));
+    !routeActive;
 
   const showRouteYou = routeActive && routeFrom != null;
 
@@ -192,6 +188,8 @@ export function DealMapLeaflet({
           subdomains={CARTO_LIGHT_TILES.subdomains}
           maxZoom={CARTO_LIGHT_TILES.maxZoom}
           maxNativeZoom={CARTO_LIGHT_TILES.maxNativeZoom}
+          tileSize={512}
+          zoomOffset={-1}
           updateWhenZooming={false}
           updateWhenIdle
         />

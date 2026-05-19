@@ -1,5 +1,5 @@
-import { MapExploreScreen } from "@/features/maps/components/MapExploreScreen";
+import { MapExploreScreenLazy } from "@/features/maps/components/MapExploreScreenLazy";
 
 export default function MapPage() {
-  return <MapExploreScreen />;
+  return <MapExploreScreenLazy />;
 }

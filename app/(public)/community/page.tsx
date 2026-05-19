@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MessageCircle, Search, ThumbsUp } from "lucide-react";
 
 import { FeedCommentPenButton } from "@/components/layout/FeedCommentPenButton";
+import { FeedCommentModal } from "@/features/community/components/FeedCommentModal";
 import {
   PUBLIC_PAGE_ACCENT,
   PublicListPageShell,
@@ -61,8 +62,9 @@ const FEED_POSTS = [
 
 export default function CommunityPage() {
   const [activeFilter, setActiveFilter] = useState(0);
-  const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [commentDefaultTitle, setCommentDefaultTitle] = useState("");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerMode, setComposerMode] = useState<"feed" | "comment">("comment");
+  const [commentTargetTitle, setCommentTargetTitle] = useState("");
 
   const filtered =
     activeFilter === 0
@@ -79,10 +81,11 @@ export default function CommunityPage() {
       subtitle="Finds, tips & brags"
       headerAction={
         <FeedCommentPenButton
-          defaultTitle={commentDefaultTitle}
-          open={commentModalOpen}
-          onOpenChange={setCommentModalOpen}
-          onPenClick={() => setCommentDefaultTitle("")}
+          onClick={() => {
+            setCommentTargetTitle("");
+            setComposerMode("feed");
+            setComposerOpen(true);
+          }}
         />
       }
     >
@@ -156,13 +159,14 @@ export default function CommunityPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setCommentDefaultTitle(post.title);
-                        setCommentModalOpen(true);
+                        setCommentTargetTitle(post.title);
+                        setComposerMode("comment");
+                        setComposerOpen(true);
                       }}
                       className="inline-flex items-center gap-1.5 text-xs font-medium transition hover:text-neutral-700"
-                      aria-label={`View ${post.comments} comments`}
+                      aria-label={`Reply · ${post.comments} comments`}
                     >
-                      <MessageCircle className="h-4 w-4" aria-hidden />
+                      <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
                       {post.comments}
                     </button>
                   </div>
@@ -172,6 +176,13 @@ export default function CommunityPage() {
           </li>
         ))}
       </ul>
+
+      <FeedCommentModal
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        mode={composerMode}
+        defaultTitle={composerMode === "comment" ? commentTargetTitle : ""}
+      />
     </PublicListPageShell>
   );
 }

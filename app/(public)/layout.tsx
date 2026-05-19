@@ -1,4 +1,5 @@
 import { MobileNav } from "@/components/layout/MobileNav";
+import { SkipToContent } from "@/components/layout/SkipToContent";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { getSession } from "@/lib/auth/session";
 
@@ -7,7 +8,10 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <AuthProvider session={session}>
-      {children}
+      <SkipToContent />
+      <main id="main-content" className="flex min-h-[100dvh] min-w-0 flex-1 flex-col">
+        {children}
+      </main>
       <MobileNav />
     </AuthProvider>
   );

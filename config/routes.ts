@@ -7,6 +7,7 @@ export const routes = {
   community: "/community",
   saved: "/saved",
   profile: "/profile",
+  privacyPolicy: "/privacy",
   submissions: "/submissions",
   login: "/login",
 } as const;

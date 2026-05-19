@@ -1,21 +1,15 @@
-﻿"use client";
+"use client";
 
+import dynamic from "next/dynamic";
 import { MapPin, Navigation, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useCallback, useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { ProfileLink } from "@/components/layout/ProfileLink";
 import { routes } from "@/config/routes";
 import { PRICE_FILTER_CHIPS } from "@/constants/filters";
-import { ProfileSidePanel } from "@/features/profile/components/ProfileSidePanel";
-import { DealMap } from "@/features/maps/components/DealMap";
-import { DropFeedModal } from "@/features/maps/components/DropFeedModal";
-import { MapFilterFeedsModal } from "@/features/maps/components/MapFilterFeedsModal";
-import { MapSearchResultsMobile } from "@/features/maps/components/MapSearchResultsMobile";
+import { MapLoadingSkeleton } from "@/features/maps/components/MapLoadingSkeleton";
 import { MapSearchResultsPanel } from "@/features/maps/components/MapSearchResultsPanel";
-import {
-  MapRestaurantSidePanel,
-  type SidePanelAnchor,
-} from "@/features/maps/components/MapRestaurantSidePanel";
+import type { SidePanelAnchor } from "@/features/maps/components/MapRestaurantSidePanel";
 import { useDrivingDistances } from "@/features/maps/hooks/useDrivingDistances";
 import { useNearbyRestaurants } from "@/features/maps/hooks/useNearbyRestaurants";
 import { useSearchLocationGeocode } from "@/features/maps/hooks/useSearchLocationGeocode";
@@ -33,7 +27,53 @@ import {
   withDistances,
 } from "@/features/restaurants/store/mapExplore.store";
 import { isNearBrisbane } from "@/features/maps/utils/nearBrisbane";
+import { useDeferredReady } from "@/lib/perf/useDeferredReady";
 import { cn } from "@/lib/utils/cn";
+
+const DealMap = dynamic(
+  () => import("@/features/maps/components/DealMap").then((m) => ({ default: m.DealMap })),
+  { ssr: false, loading: () => <MapLoadingSkeleton /> },
+);
+
+const MapFilterFeedsModal = dynamic(
+  () =>
+    import("@/features/maps/components/MapFilterFeedsModal").then((m) => ({
+      default: m.MapFilterFeedsModal,
+    })),
+  { ssr: false },
+);
+
+const MapSearchResultsMobile = dynamic(
+  () =>
+    import("@/features/maps/components/MapSearchResultsMobile").then((m) => ({
+      default: m.MapSearchResultsMobile,
+    })),
+  { ssr: false },
+);
+
+const MapRestaurantSidePanel = dynamic(
+  () =>
+    import("@/features/maps/components/MapRestaurantSidePanel").then((m) => ({
+      default: m.MapRestaurantSidePanel,
+    })),
+  { ssr: false },
+);
+
+const ProfileSidePanel = dynamic(
+  () =>
+    import("@/features/profile/components/ProfileSidePanel").then((m) => ({
+      default: m.ProfileSidePanel,
+    })),
+  { ssr: false },
+);
+
+const DropFeedModal = dynamic(
+  () =>
+    import("@/features/maps/components/DropFeedModal").then((m) => ({
+      default: m.DropFeedModal,
+    })),
+  { ssr: false },
+);
 
 const ACCENT = "#FF5722";
 
@@ -273,15 +313,20 @@ export function MapExploreScreen() {
       if (isNearBrisbane(pin)) return pin;
     }
     if (coords) return coords;
-    return null;
-  }, [coords, searchLocation]);
+    // Straight-line + driving origin when GPS not granted yet (same hub as nearby listings).
+    return nearbySearchCenter;
+  }, [coords, searchLocation, nearbySearchCenter]);
 
   const withStraightLine = useMemo(
     () => withDistances(filtered, distanceOrigin),
     [filtered, distanceOrigin],
   );
 
-  const { drivingKmById } = useDrivingDistances(distanceOrigin, filtered);
+  /** Paint shell first so LCP is the skeleton, not late map tiles. */
+  const mapMountReady = useDeferredReady({ timeoutMs: 120, fallbackDelayMs: 0 });
+  const { drivingKmById } = useDrivingDistances(distanceOrigin, filtered, {
+    enabled: distanceOrigin != null && filtered.length > 0,
+  });
 
   const withDist = useMemo(
     () =>
@@ -290,7 +335,7 @@ export function MapExploreScreen() {
         if (driveKm != null && Number.isFinite(driveKm)) {
           return { ...r, distanceKm: driveKm, distanceIsDriving: true };
         }
-        return { ...r, distanceIsDriving: false };
+        return { ...r, distanceKm: r.distanceKm, distanceIsDriving: false };
       }),
     [withStraightLine, drivingKmById],
   );
@@ -428,8 +473,9 @@ export function MapExploreScreen() {
         </div>
       </header>
 
-      <MapFilterFeedsModal
-        open={filterModalOpen}
+      {filterModalOpen ? (
+        <MapFilterFeedsModal
+        open
         onClose={() => setFilterModalOpen(false)}
         panelTopPx={filterPanelTopPx}
         searchCenter={nearbySearchCenter}
@@ -443,19 +489,24 @@ export function MapExploreScreen() {
           setActiveCuisine(cuisine);
           setShowOnlyFeeds(show);
         }}
-      />
+        />
+      ) : null}
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <div className="absolute inset-0 z-0 min-h-0">
-          <DealMap
-            restaurants={mapRestaurants}
-            userCoords={coords}
-            selectedId={selectedRestaurantId}
-            onSelect={setSelectedRestaurantId}
-            flyTo={flyTo}
-            routeFrom={distanceOrigin}
-            onMapClick={dismissSearch}
-          />
+          {mapMountReady ? (
+            <DealMap
+              restaurants={mapRestaurants}
+              userCoords={coords}
+              selectedId={selectedRestaurantId}
+              onSelect={setSelectedRestaurantId}
+              flyTo={flyTo}
+              routeFrom={selectedRestaurantId ? distanceOrigin : null}
+              onMapClick={dismissSearch}
+            />
+          ) : (
+            <MapLoadingSkeleton />
+          )}
         </div>
 
         {showSearchResults ? (
@@ -583,7 +634,7 @@ export function MapExploreScreen() {
         />
       )}
 
-      <DropFeedModal open={dropFeedOpen} onClose={() => setDropFeedOpen(false)} />
+      {dropFeedOpen ? <DropFeedModal open onClose={() => setDropFeedOpen(false)} /> : null}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, LogOut, Mail, User, X } from "lucide-react";
+import { ChevronRight, ClipboardList, LogOut, Mail, Shield, User, X } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -167,6 +167,21 @@ export function ProfilePanelContent({
             className="mt-2 h-11 w-full cursor-default rounded-xl border border-neutral-200 bg-white px-3.5 text-sm text-neutral-700 outline-none"
           />
         </div>
+
+        <Link
+          href={routes.privacyPolicy}
+          onClick={onClose}
+          className="flex items-center gap-3 border-b border-neutral-200/80 py-3.5 transition hover:bg-neutral-50/60"
+        >
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700"
+            aria-hidden
+          >
+            <Shield className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <span className="min-w-0 flex-1 text-sm font-bold text-neutral-900">privacy policy</span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-neutral-400" strokeWidth={2} aria-hidden />
+        </Link>
 
         {state.error ? (
           <p className="text-sm font-medium text-red-600" role="alert">

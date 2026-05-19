@@ -11,6 +11,7 @@ import {
   PENDING_SUBMISSIONS,
   type PendingSubmission,
 } from "@/features/submissions/data/mock-submissions";
+import { FeaturedListingsSection } from "@/features/submissions/components/FeaturedListingsSection";
 import { formatPriceCompact } from "@/lib/utils/formatCurrency";
 import { cn } from "@/lib/utils/cn";
 
@@ -183,6 +184,8 @@ export function SubmissionsQueueScreen() {
             ))}
           </div>
         </section>
+
+        <FeaturedListingsSection />
       </main>
     </div>
   );
