@@ -8,6 +8,10 @@ import {
   FEED_CATEGORIES,
   type FeedCategoryId,
 } from "@/features/community/constants/feedCategories";
+import {
+  FeedRichTextEditor,
+  isRichTextEmpty,
+} from "@/features/community/components/FeedRichTextEditor";
 import { cn } from "@/lib/utils/cn";
 
 const ACCENT = "#FF5722";
@@ -26,6 +30,7 @@ export type FeedCommentModalProps = {
   mode: FeedComposerMode;
   defaultTitle?: string;
   defaultCategory?: FeedCategoryId;
+  defaultDetailsHtml?: string;
 };
 
 export function FeedCommentModal({
@@ -34,12 +39,9 @@ export function FeedCommentModal({
   mode,
   defaultTitle = "",
   defaultCategory,
+  defaultDetailsHtml = "",
 }: FeedCommentModalProps) {
   const titleId = useId();
-  const isFeed = mode === "feed";
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<FeedCategoryId>("finds");
-  const [comment, setComment] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -59,28 +61,58 @@ export function FeedCommentModal({
     };
   }, [open]);
 
-  useEffect(() => {
-    if (!open) {
-      setTitle("");
-      setCategory("finds");
-      setComment("");
-      return;
-    }
-    if (isFeed) {
-      setTitle(defaultTitle);
-      setCategory(defaultCategory ?? "finds");
-    }
-  }, [open, defaultTitle, defaultCategory, isFeed]);
-
   if (!open) return null;
+
+  const ui = (
+    <FeedCommentModalForm
+      titleId={titleId}
+      mode={mode}
+      defaultTitle={defaultTitle}
+      defaultCategory={defaultCategory}
+      defaultDetailsHtml={defaultDetailsHtml}
+      onClose={onClose}
+    />
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(ui, document.body);
+}
+
+type FeedCommentModalFormProps = {
+  titleId: string;
+  mode: FeedComposerMode;
+  defaultTitle: string;
+  defaultCategory?: FeedCategoryId;
+  defaultDetailsHtml: string;
+  onClose: () => void;
+};
+
+function FeedCommentModalForm({
+  titleId,
+  mode,
+  defaultTitle,
+  defaultCategory,
+  defaultDetailsHtml,
+  onClose,
+}: FeedCommentModalFormProps) {
+  const isFeed = mode === "feed";
+  const [title, setTitle] = useState(isFeed ? defaultTitle : "");
+  const [category, setCategory] = useState<FeedCategoryId>(defaultCategory ?? "finds");
+  const [comment, setComment] = useState(isFeed ? defaultDetailsHtml : "");
+  const [commentError, setCommentError] = useState(false);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (isRichTextEmpty(comment)) {
+      setCommentError(true);
+      return;
+    }
+    setCommentError(false);
     console.info(
       isFeed ? "Feed post:" : "Feed comment:",
       isFeed
-        ? { title: title.trim(), category, comment: comment.trim() }
-        : { title: defaultTitle.trim(), comment: comment.trim() },
+        ? { title: title.trim(), category, comment }
+        : { title: defaultTitle.trim(), comment },
     );
     onClose();
   };
@@ -88,7 +120,7 @@ export function FeedCommentModal({
   const heading = isFeed ? "Add feed" : "Add comment";
   const submitLabel = isFeed ? "Post feed" : "Post comment";
 
-  const ui = (
+  return (
     <>
       <button
         type="button"
@@ -133,6 +165,7 @@ export function FeedCommentModal({
           onSubmit={onSubmit}
           className={cn(
             "flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-6",
+            "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           )}
         >
           <div className="mb-4">
@@ -163,44 +196,49 @@ export function FeedCommentModal({
           </div>
 
           {isFeed ? (
-          <div className="mb-4">
-            <label htmlFor="feed-composer-category" className={labelClass}>
-              Category
-            </label>
-            <select
-              id="feed-composer-category"
-              required
-              value={category}
-              onChange={(e) => setCategory(e.target.value as FeedCategoryId)}
-              className={cn(fieldClass, "cursor-pointer appearance-none")}
-            >
-              {FEED_CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="mb-4">
+              <label htmlFor="feed-composer-category" className={labelClass}>
+                Category
+              </label>
+              <select
+                id="feed-composer-category"
+                required
+                value={category}
+                onChange={(e) => setCategory(e.target.value as FeedCategoryId)}
+                className={cn(fieldClass, "cursor-pointer appearance-none")}
+              >
+                {FEED_CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           ) : null}
 
           <div className="mb-5">
             <label htmlFor="feed-composer-body" className={labelClass}>
-              Comment
+              Details
             </label>
-            <textarea
+            <FeedRichTextEditor
               id="feed-composer-body"
-              rows={4}
-              required
-              placeholder="Share your take…"
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className={cn(fieldClass, "resize-none")}
+              onChange={(html) => {
+                setComment(html);
+                setCommentError(false);
+              }}
+              placeholder="Share your take…"
             />
+            {commentError ? (
+              <p className="mt-1.5 text-xs font-medium text-red-600" role="alert">
+                Please add details or an image.
+              </p>
+            ) : null}
           </div>
 
           <button
             type="submit"
-            className="flex h-12 w-full items-center justify-center rounded-2xl text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(255,87,34,0.35)] transition hover:brightness-105 active:scale-[0.99] sm:h-11 sm:text-sm"
+            className="flex h-12 min-h-12 w-full shrink-0 items-center justify-center rounded-2xl text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(255,87,34,0.35)] transition hover:brightness-105 active:scale-[0.99]"
             style={{ backgroundColor: ACCENT }}
           >
             {submitLabel}
@@ -209,7 +247,4 @@ export function FeedCommentModal({
       </div>
     </>
   );
-
-  if (typeof document === "undefined") return null;
-  return createPortal(ui, document.body);
 }

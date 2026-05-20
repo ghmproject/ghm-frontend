@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MessageCircle, Search, ThumbsUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Ellipsis, MessageCircle, Search, ThumbsUp } from "lucide-react";
 
 import { FeedCommentPenButton } from "@/components/layout/FeedCommentPenButton";
 import { FeedCommentModal } from "@/features/community/components/FeedCommentModal";
@@ -63,10 +63,15 @@ const FEED_POSTS = [
 export default function CommunityPage() {
   const [activeFilter, setActiveFilter] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
-  const [composerMode, setComposerMode] = useState<"feed" | "comment">("comment");
-  const [commentTargetTitle, setCommentTargetTitle] = useState("");
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const filtered =
+  const byCategory =
     activeFilter === 0
       ? FEED_POSTS
       : FEED_POSTS.filter((post) => {
@@ -75,6 +80,35 @@ export default function CommunityPage() {
           return post.category === "price-checks";
         });
 
+  const q = searchQuery.trim().toLowerCase();
+  const filtered =
+    q.length === 0
+      ? byCategory
+      : byCategory.filter((post) => {
+          const haystack = `${post.title} ${post.body} ${post.author}`.toLowerCase();
+          return haystack.includes(q);
+        });
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (searchWrapRef.current?.contains(target)) return;
+      setSearchOpen(false);
+      setSearchQuery("");
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!replyingToPostId) return;
+    // Focus after render
+    const t = window.setTimeout(() => replyInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [replyingToPostId]);
+
   return (
     <PublicListPageShell
       title="Feed"
@@ -82,8 +116,7 @@ export default function CommunityPage() {
       headerAction={
         <FeedCommentPenButton
           onClick={() => {
-            setCommentTargetTitle("");
-            setComposerMode("feed");
+            setEditingPostId(null);
             setComposerOpen(true);
           }}
         />
@@ -117,13 +150,34 @@ export default function CommunityPage() {
             </button>
           );
         })}
-        <button
-          type="button"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-50"
-          aria-label="Search feed"
-        >
-          <Search className="h-4 w-4" aria-hidden />
-        </button>
+        {searchOpen ? (
+          <div ref={searchWrapRef} className="flex min-w-[220px] shrink-0 items-center">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search…"
+              className="h-10 w-full rounded-full border border-neutral-200/90 bg-white px-4 text-sm text-neutral-800 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-neutral-300 focus:ring-2 focus:ring-[#FF5722]/25"
+              aria-label="Search feed"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setSearchOpen(false);
+                  setSearchQuery("");
+                }
+              }}
+            />
+          </div>
+        ) : null}
+        {!searchOpen ? (
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-50"
+            aria-label="Search feed"
+          >
+            <Search className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
       </div>
 
       <ul className="w-full">
@@ -147,9 +201,23 @@ export default function CommunityPage() {
                     <span aria-hidden> · </span>
                     <span>{post.ago}</span>
                   </p>
-                  <h3 className="mt-1.5 text-[15px] font-bold leading-snug text-neutral-900 sm:text-base">
-                    {post.title}
-                  </h3>
+                  <div className="mt-1.5 flex items-start justify-between gap-2">
+                    <h3 className="min-w-0 flex-1 text-[15px] font-bold leading-snug text-neutral-900 sm:text-base">
+                      {post.title}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingPostId(post.id);
+                        setComposerOpen(true);
+                      }}
+                      className="mt-[-2px] inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
+                      aria-label={`Edit · ${post.title}`}
+                      title="Edit"
+                    >
+                      <Ellipsis className="h-5 w-5" aria-hidden />
+                    </button>
+                  </div>
                   <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">{post.body}</p>
                   <div className="mt-3 flex items-center gap-4 text-neutral-500">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium">
@@ -159,9 +227,8 @@ export default function CommunityPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        setCommentTargetTitle(post.title);
-                        setComposerMode("comment");
-                        setComposerOpen(true);
+                        setReplyingToPostId(post.id);
+                        setReplyDraft("");
                       }}
                       className="inline-flex items-center gap-1.5 text-xs font-medium transition hover:text-neutral-700"
                       aria-label={`Reply · ${post.comments} comments`}
@@ -170,6 +237,50 @@ export default function CommunityPage() {
                       {post.comments}
                     </button>
                   </div>
+
+                  {replyingToPostId === post.id ? (
+                    <div className="mt-3 rounded-2xl bg-orange-50/60 p-3">
+                      <label htmlFor={`feed-reply-${post.id}`} className="sr-only">
+                        Write a reply
+                      </label>
+                      <textarea
+                        id={`feed-reply-${post.id}`}
+                        ref={replyInputRef}
+                        value={replyDraft}
+                        onChange={(e) => setReplyDraft(e.target.value)}
+                        placeholder="Write a reply…"
+                        rows={2}
+                        className="w-full resize-none rounded-2xl border-0 bg-white/90 px-3.5 py-3 text-sm text-neutral-900 outline-none ring-0 transition placeholder:text-neutral-400 focus:ring-2 focus:ring-[#FF5722]/25"
+                      />
+                      <div className="mt-2 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplyingToPostId(null);
+                            setReplyDraft("");
+                          }}
+                          className="h-9 rounded-full px-3 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-200/60"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!replyDraft.trim()}
+                          onClick={() => {
+                            const text = replyDraft.trim();
+                            if (!text) return;
+                            console.info("Feed reply:", { replyingTo: post.id, reply: text });
+                            setReplyingToPostId(null);
+                            setReplyDraft("");
+                          }}
+                          className="h-9 rounded-full px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-50"
+                          style={{ backgroundColor: PUBLIC_PAGE_ACCENT }}
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </article>
@@ -180,8 +291,18 @@ export default function CommunityPage() {
       <FeedCommentModal
         open={composerOpen}
         onClose={() => setComposerOpen(false)}
-        mode={composerMode}
-        defaultTitle={composerMode === "comment" ? commentTargetTitle : ""}
+        mode="feed"
+        defaultTitle={
+          (editingPostId ? FEED_POSTS.find((p) => p.id === editingPostId)?.title : "") ?? ""
+        }
+        defaultCategory={
+          editingPostId
+            ? FEED_POSTS.find((p) => p.id === editingPostId)?.category
+            : undefined
+        }
+        defaultDetailsHtml={
+          editingPostId ? FEED_POSTS.find((p) => p.id === editingPostId)?.body ?? "" : ""
+        }
       />
     </PublicListPageShell>
   );
