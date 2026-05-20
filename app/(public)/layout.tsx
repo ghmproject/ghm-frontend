@@ -1,4 +1,5 @@
 import { MobileNav } from "@/components/layout/MobileNav";
+import { AppOnboarding } from "@/components/onboarding/AppOnboarding";
 import { SkipToContent } from "@/components/layout/SkipToContent";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { getSession } from "@/lib/auth/session";
@@ -13,6 +14,7 @@ export default async function PublicLayout({ children }: { children: React.React
         {children}
       </main>
       <MobileNav />
+      <AppOnboarding />
     </AuthProvider>
   );
 }
