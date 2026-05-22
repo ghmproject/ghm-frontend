@@ -1,5 +1,6 @@
 import { ApiError, apiRequest } from "@/api/inspector";
 import { env } from "@/config/env";
+import { getBackendAccessToken } from "@/lib/auth/backendAccessToken";
 import type {
   ImportCsvResponse,
   ModerationActionResponse,
@@ -51,8 +52,15 @@ export async function importAdminCsv(file: File): Promise<ImportCsvResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
+  const headers = new Headers();
+  const token = getBackendAccessToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
   const res = await fetch(`${env.apiBaseUrl}/api/admin/import-csv`, {
     method: "POST",
+    headers,
     body: formData,
     credentials: "include",
   });
