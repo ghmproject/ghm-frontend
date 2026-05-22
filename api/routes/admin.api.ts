@@ -72,3 +72,23 @@ export async function importAdminCsv(file: File): Promise<ImportCsvResponse> {
 
   return data as ImportCsvResponse;
 }
+
+const CSV_TEMPLATE_PATH = "/restaurants_headers_only.csv";
+const CSV_TEMPLATE_FILENAME = "restaurants_headers_only.csv";
+
+/** Download CSV import template from `public/restaurants_headers_only.csv`. */
+export async function downloadAdminCsv(): Promise<void> {
+  const res = await fetch(CSV_TEMPLATE_PATH, { cache: "no-store" });
+
+  if (!res.ok) {
+    throw new ApiError("Could not download CSV template.", res.status);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = CSV_TEMPLATE_FILENAME;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}

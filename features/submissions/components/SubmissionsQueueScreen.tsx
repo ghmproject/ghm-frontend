@@ -1,6 +1,6 @@
 "use client";
 
-import { Flag, RotateCcw, ThumbsDown, ThumbsUp, Trash2, Upload } from "lucide-react";
+import { Download, Flag, RotateCcw, ThumbsDown, ThumbsUp, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import {
   deleteReportedListing,
   getPendingSubmissions,
   getReportedListings,
+  downloadAdminCsv,
   importAdminCsv,
   rejectSubmission,
   restoreReportedListing,
@@ -191,6 +192,7 @@ export function SubmissionsQueueScreen() {
   const [error, setError] = useState<string | null>(null);
   const [csvSuccess, setCsvSuccess] = useState<string | null>(null);
   const [csvUploading, setCsvUploading] = useState(false);
+  const [csvDownloading, setCsvDownloading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
 
   const visiblePending = showAllPending ? pending : pending.slice(0, 2);
@@ -242,15 +244,31 @@ export function SubmissionsQueueScreen() {
     void loadReported();
   }, [loadPending, loadReported]);
 
+  const handleCsvDownload = async () => {
+    try {
+      setCsvDownloading(true);
+      setError(null);
+      await downloadAdminCsv();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "CSV download failed.");
+    } finally {
+      setCsvDownloading(false);
+    }
+  };
+
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
 
     const lower = file.name.toLowerCase();
-    if (!lower.endsWith(".csv") && !lower.endsWith(".xlsx")) {
+    if (
+      !lower.endsWith(".csv") &&
+      !lower.endsWith(".xlsx") &&
+      !lower.endsWith(".xls")
+    ) {
       setCsvSuccess(null);
-      setError("Upload a .csv or .xlsx file (Excel workbook).");
+      setError("Upload a .csv or Excel file (.xlsx, .xls).");
       return;
     }
 
@@ -343,22 +361,32 @@ export function SubmissionsQueueScreen() {
             <h1 className="text-xl font-bold text-neutral-900">Submissions queue</h1>
             <p className="mt-1 text-sm text-neutral-600">Approve or reject restaurant submissions.</p>
           </div>
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleCsvDownload()}
+              disabled={csvDownloading || csvUploading}
+              title="Download CSV"
+              aria-label="Download CSV"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-50 disabled:opacity-60"
+            >
+              <Download className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+            </button>
             <input
               ref={csvInputRef}
               type="file"
-              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="sr-only"
               onChange={handleCsvUpload}
             />
             <button
               type="button"
               onClick={() => csvInputRef.current?.click()}
-              disabled={csvUploading}
+              disabled={csvUploading || csvDownloading}
               className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200/90 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-60"
             >
               <Upload className="h-4 w-4 text-neutral-600" aria-hidden />
-              {csvUploading ? "Importing…" : "Upload CSV"}
+              {csvUploading ? "Importing…" : "Upload CSV / Excel"}
             </button>
           </div>
         </div>

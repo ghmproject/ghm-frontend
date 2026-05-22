@@ -8,9 +8,11 @@ import { getRestaurantRankings } from "@/api/routes/ranking.api";
 import { DropFeedPenButton } from "@/components/layout/DropFeedPenButton";
 import { PUBLIC_PAGE_HEADER_PT } from "@/components/layout/PublicListPageShell";
 import { siteConfig } from "@/config/site";
+import { useDrivingDistances } from "@/features/maps/hooks/useDrivingDistances";
 import { RankingRestaurantCard } from "@/features/rankings/components/RankingRestaurantCard";
 import { useRankingFilters } from "@/features/rankings/hooks/useRankingFilters";
 import { getRankingBannerSubtitle } from "@/features/rankings/lib/rankingDisplay";
+import { rankingRowsToDrivingRestaurants } from "@/features/rankings/lib/rankingRowsForDriving";
 import { syncTopRatedRanking } from "@/lib/rankings/topRatedRankingStorage";
 import { useUserLocation } from "@/features/maps/hooks/useUserLocation";
 import { cn } from "@/lib/utils/cn";
@@ -69,6 +71,11 @@ export default function RankingsPage() {
 
   const rows = rankingRes?.data ?? [];
   const apiSortBy = rankingRes?.sortBy ?? filter?.sortBy ?? "votes";
+
+  const drivingTargets = useMemo(() => rankingRowsToDrivingRestaurants(rows), [rows]);
+  const { drivingKmById } = useDrivingDistances(coords, drivingTargets, {
+    enabled: coords != null && drivingTargets.length > 0,
+  });
 
   useEffect(() => {
     if (rows.length > 0 && apiSortBy === "popularity") {
@@ -208,9 +215,13 @@ export default function RankingsPage() {
             ? rows.map((row) => (
                 <li
                   key={row.restaurantId}
-                  className="border-neutral-300/40 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-dotted"
+                  className="border-b border-neutral-200"
                 >
-                  <RankingRestaurantCard row={row} />
+                  <RankingRestaurantCard
+                    row={row}
+                    userCoords={coords}
+                    drivingKm={drivingKmById[String(row.restaurantId)]}
+                  />
                 </li>
               ))
             : null}

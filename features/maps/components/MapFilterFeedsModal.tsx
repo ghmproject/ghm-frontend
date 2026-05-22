@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Flame, Star, X } from "lucide-react";
+import { Check, Flame, RotateCcw, Star, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -30,6 +30,10 @@ const CUISINE_CHIPS: { id: CuisineFilterId; label: string }[] = [
   { id: "bakery", label: "Bakery" },
   { id: "burgers", label: "Burgers" },
 ];
+
+const DEFAULT_FILTER_PRICE = "u12" as const satisfies (typeof MAX_PRICE_IDS)[number];
+const DEFAULT_FILTER_CUISINE = "all" as const satisfies CuisineFilterId;
+const DEFAULT_FILTER_SHOW = "all" as const satisfies ShowOnlyFeedsId;
 
 const SHOW_ROWS: {
   id: Exclude<ShowOnlyFeedsId, "all">;
@@ -213,13 +217,24 @@ export function MapFilterFeedsModal({
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  const [draftPrice, setDraftPrice] = useState<(typeof MAX_PRICE_IDS)[number]>("u12");
-  const [draftCuisine, setDraftCuisine] = useState<CuisineFilterId>("all");
-  const [draftShow, setDraftShow] = useState<ShowOnlyFeedsId>("all");
+  const [draftPrice, setDraftPrice] = useState<(typeof MAX_PRICE_IDS)[number]>(DEFAULT_FILTER_PRICE);
+  const [draftCuisine, setDraftCuisine] = useState<CuisineFilterId>(DEFAULT_FILTER_CUISINE);
+  const [draftShow, setDraftShow] = useState<ShowOnlyFeedsId>(DEFAULT_FILTER_SHOW);
+
+  const resetAllFilters = () => {
+    setDraftPrice(DEFAULT_FILTER_PRICE);
+    setDraftCuisine(DEFAULT_FILTER_CUISINE);
+    setDraftShow(DEFAULT_FILTER_SHOW);
+    onApply({
+      price: DEFAULT_FILTER_PRICE,
+      cuisine: DEFAULT_FILTER_CUISINE,
+      show: DEFAULT_FILTER_SHOW,
+    });
+  };
 
   useEffect(() => {
     if (!open) return;
-    setDraftPrice(isModalPriceId(activePriceFilter) ? activePriceFilter : "u12");
+    setDraftPrice(isModalPriceId(activePriceFilter) ? activePriceFilter : DEFAULT_FILTER_PRICE);
     setDraftCuisine(activeCuisine);
     setDraftShow(showOnlyFeeds);
   }, [open, activePriceFilter, activeCuisine, showOnlyFeeds]);
@@ -299,17 +314,28 @@ export function MapFilterFeedsModal({
         </div>
 
         <header className="relative shrink-0 px-6 pb-4 pt-5 max-sm:px-4 max-sm:pb-3 max-sm:pt-2 [@media(max-height:640px)]:pb-3 [@media(max-height:640px)]:pt-4 sm:pt-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200/90 hover:text-neutral-700 max-sm:hidden"
-            aria-label="Close filters"
-          >
-            <X className="h-[15px] w-[15px]" strokeWidth={2} />
-          </button>
+          <div className="absolute right-4 top-4 flex items-center gap-1.5 sm:right-5 sm:top-5">
+            <button
+              type="button"
+              onClick={resetAllFilters}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition hover:brightness-[1.03] active:scale-[0.98]"
+              style={{ backgroundColor: ACCENT_SOFT, color: ACCENT }}
+              aria-label="Reset filters"
+            >
+              <RotateCcw className="h-[15px] w-[15px]" strokeWidth={2.25} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200/90 hover:text-neutral-700 max-sm:hidden"
+              aria-label="Close filters"
+            >
+              <X className="h-[15px] w-[15px]" strokeWidth={2} />
+            </button>
+          </div>
           <h2
             id="filter-feeds-title"
-            className="pr-10 text-[26px] font-bold leading-[1.15] tracking-[-0.025em] text-neutral-900 max-sm:pr-0 max-sm:text-[22px]"
+            className="pr-[4.75rem] text-[26px] font-bold leading-[1.15] tracking-[-0.025em] text-neutral-900 max-sm:pr-11 max-sm:text-[22px]"
           >
             Filter feeds
           </h2>

@@ -27,3 +27,14 @@ export function formatDistanceKm(
   if (km >= 1000) return `${Math.round(km).toLocaleString()}km${suffix}`;
   return `${km.toFixed(1)}km${suffix}`;
 }
+
+/** Straight-line distance label from user GPS to a target (e.g. rankings list). */
+export function formatLiveDistanceFromUser(
+  user: LatLng | null | undefined,
+  target: { lat: number; lng: number } | null | undefined,
+): string | null {
+  if (!user || !target) return null;
+  const { lat, lng } = target;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return formatDistanceKm(haversineKm(user, { lat, lng }), "straight");
+}

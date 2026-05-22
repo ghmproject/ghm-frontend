@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import { ThumbsUp } from "lucide-react";
+import { useMemo } from "react";
 
 import type { RankedRestaurantRow } from "@/api/types/ranking";
 import { routes } from "@/config/routes";
 import { useMealVoteTotals } from "@/features/restaurants/hooks/useMealVoteTotals";
+import type { LatLng } from "@/features/restaurants/types/restaurant";
+import {
+  formatDistanceKm,
+  formatLiveDistanceFromUser,
+} from "@/features/restaurants/utils/distance";
 import { formatPriceCompact } from "@/lib/utils/formatCurrency";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,10 +20,29 @@ const VOTE_YELLOW = "#facc15";
 
 type RankingRestaurantCardProps = {
   row: RankedRestaurantRow;
+  /** User GPS — straight-line fallback while road distance loads (same as map). */
+  userCoords?: LatLng | null;
+  /** Road distance in km from `/api/driving-distances` (same as map). */
+  drivingKm?: number;
 };
 
-export function RankingRestaurantCard({ row }: RankingRestaurantCardProps) {
+export function RankingRestaurantCard({
+  row,
+  userCoords = null,
+  drivingKm,
+}: RankingRestaurantCardProps) {
   const { netScoreLabel, isLoading: votesLoading } = useMealVoteTotals(row.topMealId);
+
+  const distanceLabel = useMemo(() => {
+    if (drivingKm != null && Number.isFinite(drivingKm) && drivingKm >= 0) {
+      return formatDistanceKm(drivingKm, "drive");
+    }
+    const live = formatLiveDistanceFromUser(userCoords, {
+      lat: row.latitude,
+      lng: row.longitude,
+    });
+    return live ?? row.distance ?? null;
+  }, [drivingKm, userCoords, row.latitude, row.longitude, row.distance]);
 
   return (
     <Link
@@ -47,9 +72,9 @@ export function RankingRestaurantCard({ row }: RankingRestaurantCardProps) {
           <span className="text-[15px] font-bold tracking-tight text-neutral-900 sm:text-base">
             {row.restaurantName}
           </span>
-          {row.distance ? (
+          {distanceLabel ? (
             <span className="text-sm font-medium tabular-nums text-neutral-500">
-              · {row.distance}
+              · {distanceLabel}
             </span>
           ) : null}
         </div>
