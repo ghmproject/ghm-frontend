@@ -9,10 +9,7 @@ type UserLocationState =
   | { status: "ready"; coords: LatLng }
   | { status: "denied" | "unavailable"; message: string };
 
-/**
- * Requests GPS on map load when permission is prompt/granted.
- * When blocked in browser site settings, the map overlay stays visible until enabled.
- */
+/** Requests GPS on map load when permission is prompt/granted. Map uses a hub fallback until ready. */
 export function useUserLocation() {
   const [state, setState] = useState<UserLocationState>({ status: "idle" });
 

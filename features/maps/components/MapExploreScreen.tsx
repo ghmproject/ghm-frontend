@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { MapPin, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useCallback, useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { ProfileLink } from "@/components/layout/ProfileLink";
@@ -78,11 +78,10 @@ const ACCENT = "#FF5722";
 const MAP_HEADER_CONTROL_ROUNDED = "rounded-2xl";
 
 export function MapExploreScreen() {
-  const { coords, state } = useUserLocation();
-  const locationReady = state.status === "ready";
+  const { coords } = useUserLocation();
   const nearbySearchCenter = useMemo(
-    () => resolveNearbySearchCenter(coords, locationReady),
-    [coords, locationReady],
+    () => resolveNearbySearchCenter(coords, coords != null),
+    [coords],
   );
   const activePriceFilter = useMapExploreStore((s) => s.activePriceFilter);
   const activeCuisine = useMapExploreStore((s) => s.activeCuisine);
@@ -98,10 +97,6 @@ export function MapExploreScreen() {
     showOnlyFeeds,
   });
 
-  useEffect(() => {
-    if (!locationReady) return;
-    void refetchNearby();
-  }, [locationReady, refetchNearby]);
   const searchQuery = useMapExploreStore((s) => s.searchQuery);
   const selectedRestaurantId = useMapExploreStore((s) => s.selectedRestaurantId);
   const searchLocation = useMapExploreStore((s) => s.searchLocation);
@@ -553,25 +548,6 @@ export function MapExploreScreen() {
             />
           </div>
         ) : null}
-
-        {!locationReady && !showSearchResults && (
-          <div className="pointer-events-auto absolute inset-0 z-[1000] flex items-center justify-center bg-white/80 p-6 backdrop-blur-[2px]">
-            <div className="max-w-sm text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#FF5722]/10">
-                <MapPin className="h-7 w-7 text-[#FF5722]" />
-              </div>
-              <p className="hidden text-lg font-semibold text-neutral-900 sm:block">
-                Turn on your location
-              </p>
-              <p className="text-lg font-semibold text-neutral-900 sm:hidden">
-                Turn on your location first
-              </p>
-              {(state.status === "denied" || state.status === "unavailable") && (
-                <p className="mt-2 text-sm leading-snug text-neutral-600">{state.message}</p>
-              )}
-            </div>
-          </div>
-        )}
 
         {nearbySearchCenter && nearbyError && !nearbyLoading && (
           <div className="pointer-events-auto absolute left-2 right-2 top-2 z-20 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 shadow-md sm:left-3 sm:right-auto sm:max-w-sm">
