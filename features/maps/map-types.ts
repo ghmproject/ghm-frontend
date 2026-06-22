@@ -7,8 +7,6 @@ export type DealMapProps = {
   onSelect: (id: string) => void;
   /** Geocoded search — map flies here (Brisbane). */
   flyTo?: LatLng | null;
-  /** Driving route origin (user location or search pin). */
-  routeFrom?: LatLng | null;
   /** Fired when the user clicks the map background (not a control overlay). */
   onMapClick?: () => void;
   /** Top Rated filter — use standard orange pins (no crown / featured styling). */

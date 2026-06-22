@@ -520,7 +520,6 @@ export function MapExploreScreen() {
               selectedId={selectedRestaurantId}
               onSelect={setSelectedRestaurantId}
               flyTo={flyTo}
-              routeFrom={selectedRestaurantId ? distanceOrigin : null}
               onMapClick={handleMapClick}
               simpleMapPins={activePriceFilter === "top"}
             />

@@ -7,15 +7,10 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-lea
 import type { LatLng } from "@/features/restaurants/types/restaurant";
 
 import { MapCoordinateMenu } from "@/features/maps/components/MapCoordinateMenu";
-import { MapFitRouteBoundsLeaflet } from "@/features/maps/components/MapFitRouteBoundsLeaflet";
-import { MapDrivingRouteLeaflet } from "@/features/maps/components/MapDrivingRouteLeaflet";
-import { MapRoutePicker } from "@/features/maps/components/MapRoutePicker";
 import { UserLocationMarkerLeaflet } from "@/features/maps/components/UserLocationMarkerLeaflet";
 import { MapZoomGuard } from "@/features/maps/components/MapZoomGuard";
-import { RouteYouMarkerLeaflet } from "@/features/maps/components/RouteYouMarkerLeaflet";
 import type { DealMapProps } from "@/features/maps/map-types";
 import { useMapCoordinateMenu } from "@/features/maps/hooks/useMapCoordinateMenu";
-import { useRouteSelection } from "@/features/maps/hooks/useRouteSelection";
 import { isInBrisbaneBounds, mapCameraCenter } from "@/features/maps/utils/nearBrisbane";
 import { CARTO_LIGHT_TILES } from "@/lib/maps/leafletTiles";
 import {
@@ -135,7 +130,6 @@ export function DealMapLeaflet({
   selectedId,
   onSelect,
   flyTo,
-  routeFrom,
   onMapClick,
   simpleMapPins = false,
 }: DealMapProps) {
@@ -143,24 +137,7 @@ export function DealMapLeaflet({
   const center: [number, number] = [mapCenter.lat, mapCenter.lng];
   const { menu: coordMenu, openAt, openFromEvent, close: closeCoordMenu } = useMapCoordinateMenu();
 
-  const routeTo = useMemo(() => {
-    if (!selectedId) return null;
-    return restaurants.find((r) => r.id === selectedId)?.position ?? null;
-  }, [restaurants, selectedId]);
-
-  const { options: routeOptions, selectedIndex, setSelectedIndex } = useRouteSelection(
-    routeFrom,
-    routeTo,
-  );
-
-  const routeActive = routeFrom != null && routeTo != null && routeOptions.length > 0;
-
-  const showGpsPin =
-    userCoords != null &&
-    isInBrisbaneBounds(userCoords) &&
-    !routeActive;
-
-  const showRouteYou = routeActive && routeFrom != null;
+  const showGpsPin = userCoords != null && isInBrisbaneBounds(userCoords);
 
   const icons = useMemo(() => {
     const m = new Map<string, L.DivIcon>();
@@ -197,31 +174,9 @@ export function DealMapLeaflet({
           updateWhenIdle
         />
         <MapZoomGuard />
-        {!routeActive && <MapFlyTo target={flyTo} />}
+        <MapFlyTo target={flyTo} />
         <MapBackgroundClick onMapClick={onMapClick} />
         <MapCoordinateLayer onOpen={openAt} />
-        <MapDrivingRouteLeaflet
-          options={routeOptions}
-          selectedIndex={selectedIndex}
-          origin={routeFrom}
-          destination={routeTo}
-        />
-        {routeActive && (
-          <MapFitRouteBoundsLeaflet
-            origin={routeFrom}
-            destination={routeTo}
-            options={routeOptions}
-            selectedIndex={selectedIndex}
-          />
-        )}
-        {showRouteYou && routeFrom && (
-          <RouteYouMarkerLeaflet
-            coords={routeFrom}
-            onMapContextMenu={(e) => {
-              openFromEvent(e.originalEvent, routeFrom.lat, routeFrom.lng);
-            }}
-          />
-        )}
         {showGpsPin && userCoords && (
           <UserLocationMarkerLeaflet
             coords={userCoords}
@@ -244,13 +199,6 @@ export function DealMapLeaflet({
           );
         })}
       </MapContainer>
-      {routeOptions.length > 0 && (
-        <MapRoutePicker
-          options={routeOptions}
-          selectedIndex={selectedIndex}
-          onSelect={setSelectedIndex}
-        />
-      )}
       <MapCoordinateMenu menu={coordMenu} onClose={closeCoordMenu} />
     </div>
   );
