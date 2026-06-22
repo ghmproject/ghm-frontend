@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { env } from "@/config/env";
 
@@ -92,14 +92,7 @@ async function osrmDrivingKm(
   return out;
 }
 
-export async function POST(req: NextRequest) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
+export async function handleDrivingDistances(body: unknown) {
   const origin = (body as { origin?: LatLng }).origin;
   const destinations = (body as { destinations?: Destination[] }).destinations;
 

@@ -48,7 +48,7 @@ function formatAddressFromParts(addr: NominatimAddress, displayName: string): st
 }
 
 /** Server-side reverse geocode for Drop a feed map pin. */
-export async function GET(req: NextRequest) {
+export async function handleReverseGeocode(req: NextRequest) {
   const latRaw = req.nextUrl.searchParams.get("lat");
   const lngRaw = req.nextUrl.searchParams.get("lng");
   const lat = Number(latRaw);

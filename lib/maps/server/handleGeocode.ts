@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { BRISBANE_BOUNDS } from "@/lib/maps/googleMaps";
 import { buildGeocodeQueries } from "@/lib/maps/geocodeQueries";
+import { BRISBANE_BOUNDS } from "@/lib/maps/googleMaps";
 
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
 
@@ -14,7 +14,9 @@ function inBrisbane(lat: number, lng: number): boolean {
   );
 }
 
-async function geocodeOneQuery(searchQuery: string): Promise<{ lat: number; lng: number; label: string } | null> {
+async function geocodeOneQuery(
+  searchQuery: string,
+): Promise<{ lat: number; lng: number; label: string } | null> {
   const viewbox = `${BRISBANE_BOUNDS.west},${BRISBANE_BOUNDS.south},${BRISBANE_BOUNDS.east},${BRISBANE_BOUNDS.north}`;
 
   const looksComplete =
@@ -60,7 +62,7 @@ async function geocodeOneQuery(searchQuery: string): Promise<{ lat: number; lng:
 }
 
 /** Proxy geocode so we can send a proper User-Agent (browser fetch cannot). */
-export async function GET(req: NextRequest) {
+export async function handleGeocode(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
   if (!q || q.length < 2) {
     return NextResponse.json(null);

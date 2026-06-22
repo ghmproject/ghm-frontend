@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type { LatLng, Restaurant } from "@/features/restaurants/types/restaurant";
+import { MAPS_API_PATH } from "@/lib/maps/mapsApi";
 
 async function fetchDrivingDistances(
   origin: LatLng,
@@ -10,10 +11,11 @@ async function fetchDrivingDistances(
 ): Promise<Record<string, number>> {
   if (restaurants.length === 0) return {};
 
-  const res = await fetch("/api/driving-distances", {
+  const res = await fetch(MAPS_API_PATH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      action: "driving-distances",
       origin,
       destinations: restaurants.map((r) => ({
         id: r.id,

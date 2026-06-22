@@ -1,6 +1,7 @@
 import { nearbySearchConfig } from "@/config/nearbySearch";
 import type { LatLng } from "@/features/restaurants/types/restaurant";
 import { buildGeocodeQueries } from "@/lib/maps/geocodeQueries";
+import { MAPS_API_PATH } from "@/lib/maps/mapsApi";
 
 export const DROP_FEED_SUBURB_ONLY_ERROR =
   "Enter the full street address (e.g. 735 Beams Rd, Carseldine QLD 4034). Suburb names only (West End, Sunnybank, East End, etc.) are not accepted.";
@@ -43,7 +44,9 @@ export function isSuburbNameOnlyInput(input: string): boolean {
 }
 
 async function geocodeOneQuery(query: string): Promise<LatLng | null> {
-  const res = await fetch(`/api/geocode?q=${encodeURIComponent(query.trim())}`);
+  const res = await fetch(
+    `${MAPS_API_PATH}?action=geocode&q=${encodeURIComponent(query.trim())}`,
+  );
   if (!res.ok) return null;
   const data = (await res.json()) as { lat?: number; lng?: number } | null;
   if (data && typeof data.lat === "number" && typeof data.lng === "number") {

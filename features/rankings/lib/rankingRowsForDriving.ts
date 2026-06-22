@@ -1,7 +1,7 @@
 import type { RankedRestaurantRow } from "@/api/types/ranking";
 import type { Restaurant } from "@/features/restaurants/types/restaurant";
 
-/** Minimal map pins for `/api/driving-distances` (same batch API as the map). */
+/** Minimal map pins for `/api/maps` driving-distances (same batch API as the map). */
 export function rankingRowsToDrivingRestaurants(rows: RankedRestaurantRow[]): Restaurant[] {
   const out: Restaurant[] = [];
 

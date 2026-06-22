@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { env } from "@/config/env";
 import type { DrivingRoutes, RouteOption } from "@/features/maps/types/drivingRoute";
@@ -135,14 +135,7 @@ async function osrmRoutes(origin: LatLng, destination: LatLng): Promise<DrivingR
   return toDrivingRoutes(raw);
 }
 
-export async function POST(req: NextRequest) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
+export async function handleDrivingRoute(body: unknown) {
   const origin = (body as { origin?: LatLng }).origin;
   const destination = (body as { destination?: LatLng }).destination;
 

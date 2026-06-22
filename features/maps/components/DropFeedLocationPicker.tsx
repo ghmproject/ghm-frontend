@@ -14,6 +14,7 @@ import {
   MAP_MIN_ZOOM,
 } from "@/lib/maps/googleMaps";
 import { CARTO_LIGHT_TILES } from "@/lib/maps/leafletTiles";
+import { MAPS_API_PATH } from "@/lib/maps/mapsApi";
 import { cn } from "@/lib/utils/cn";
 
 import "leaflet/dist/leaflet.css";
@@ -50,7 +51,7 @@ async function reverseGeocodePin(
   lng: number,
 ): Promise<DropFeedReverseGeocodeResult> {
   const res = await fetch(
-    `/api/reverse-geocode?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`,
+    `${MAPS_API_PATH}?action=reverse-geocode&lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`,
   );
   const data = (await res.json()) as {
     success?: boolean;

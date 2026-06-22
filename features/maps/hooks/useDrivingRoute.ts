@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { DrivingRoutes } from "@/features/maps/types/drivingRoute";
 import type { LatLng } from "@/features/restaurants/types/restaurant";
+import { MAPS_API_PATH } from "@/lib/maps/mapsApi";
 
 const EMPTY_ROUTES: DrivingRoutes = { options: [] };
 
@@ -11,10 +12,10 @@ async function fetchDrivingRoutes(
   origin: LatLng,
   destination: LatLng,
 ): Promise<DrivingRoutes> {
-  const res = await fetch("/api/driving-route", {
+  const res = await fetch(MAPS_API_PATH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ origin, destination }),
+    body: JSON.stringify({ action: "driving-route", origin, destination }),
   });
 
   if (!res.ok) return EMPTY_ROUTES;

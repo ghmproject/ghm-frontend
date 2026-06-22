@@ -22,7 +22,7 @@ type RankingRestaurantCardProps = {
   row: RankedRestaurantRow;
   /** User GPS — straight-line fallback while road distance loads (same as map). */
   userCoords?: LatLng | null;
-  /** Road distance in km from `/api/driving-distances` (same as map). */
+  /** Road distance in km from `/api/maps` driving-distances (same as map). */
   drivingKm?: number;
 };
 
