@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
     /** Keeps Turbopack rooted in this app when other lockfiles exist on the machine. */
     root: process.cwd(),
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/map",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

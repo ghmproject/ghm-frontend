@@ -125,6 +125,10 @@ export async function syncProfileNickname(nickname: string): Promise<UpdateNickn
   return { success: true };
 }
 
+export async function fetchCurrentSession(): Promise<AuthSession | null> {
+  return getSession();
+}
+
 export async function clearLocalSession(): Promise<void> {
   await clearSession();
   await clearAccessTokenCookie();

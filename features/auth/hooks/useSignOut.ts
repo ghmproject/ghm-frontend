@@ -7,9 +7,11 @@ import { logoutBackend } from "@/api/routes/auth.api";
 import { routes } from "@/config/routes";
 import { clearLocalSession } from "@/features/auth/actions/auth";
 import { clearBackendAccessToken } from "@/lib/auth/backendAccessToken";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function useSignOut() {
   const router = useRouter();
+  const { refreshSession } = useAuth();
   const [pending, setPending] = useState(false);
 
   const signOut = useCallback(async () => {
@@ -18,12 +20,12 @@ export function useSignOut() {
       await logoutBackend().catch(() => undefined);
       clearBackendAccessToken();
       await clearLocalSession();
+      await refreshSession();
       router.push(routes.login);
-      router.refresh();
     } finally {
       setPending(false);
     }
-  }, [router]);
+  }, [router, refreshSession]);
 
   return { signOut, pending };
 }

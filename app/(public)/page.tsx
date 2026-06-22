@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-
-import { routes } from "@/config/routes";
-
+/** `/` redirects via `next.config` — static placeholder only. */
 export default function HomePage() {
-  redirect(routes.map);
+  return null;
 }

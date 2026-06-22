@@ -1,31 +1,50 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
+import { fetchCurrentSession } from "@/features/auth/actions/auth";
 import type { AuthSession } from "@/lib/auth/types";
 
 type AuthContextValue = {
   session: AuthSession | null;
   isAdmin: boolean;
   isSignedIn: boolean;
+  isHydrating: boolean;
+  refreshSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({
-  session,
-  children,
-}: {
-  session: AuthSession | null;
-  children: React.ReactNode;
-}) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [isHydrating, setIsHydrating] = useState(true);
+
+  const refreshSession = useCallback(async () => {
+    const next = await fetchCurrentSession();
+    setSession(next);
+    setIsHydrating(false);
+  }, []);
+
+  useEffect(() => {
+    void refreshSession();
+  }, [refreshSession]);
+
   const value = useMemo(
     () => ({
       session,
       isAdmin: session?.role === "admin",
       isSignedIn: Boolean(session),
+      isHydrating,
+      refreshSession,
     }),
-    [session],
+    [session, isHydrating, refreshSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

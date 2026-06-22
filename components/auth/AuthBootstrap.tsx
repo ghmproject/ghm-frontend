@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 
 import { probeBackendSession } from "@/api/routes/auth.api";
 import {
   needsBackendSessionSync,
   syncSessionFromBackend,
 } from "@/features/auth/actions/auth";
+import { useAuth } from "@/providers/AuthProvider";
 
 /**
  * After the user opens the magic link on the API host, `ghm_token` lives on the backend origin.
  * This probe syncs `ghm_session` on the frontend when a pending email cookie is present.
  */
 export function AuthBootstrap() {
-  const router = useRouter();
+  const { refreshSession } = useAuth();
   const ran = useRef(false);
 
   useEffect(() => {
@@ -31,13 +31,13 @@ export function AuthBootstrap() {
 
         const synced = await syncSessionFromBackend(backend.role);
         if (synced) {
-          router.refresh();
+          await refreshSession();
         }
       } catch {
         // Server action or sync failed — ignore on public pages.
       }
     })();
-  }, [router]);
+  }, [refreshSession]);
 
   return null;
 }

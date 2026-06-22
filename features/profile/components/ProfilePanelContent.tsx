@@ -3,7 +3,6 @@
 import { ChevronRight, ClipboardList, LogOut, Mail, Shield, User, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { updateProfileName } from "@/api/routes/profile.api";
 import { ApiError } from "@/api/inspector";
@@ -47,8 +46,7 @@ export function ProfilePanelContent({
   variant = "page",
   onClose,
 }: ProfilePanelContentProps) {
-  const router = useRouter();
-  const { session, isAdmin } = useAuth();
+  const { session, isAdmin, isHydrating, refreshSession } = useAuth();
   const { signOut, pending: signOutPending } = useSignOut();
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -75,12 +73,22 @@ export function ProfilePanelContent({
         return;
       }
       setSuccess(true);
-      router.refresh();
+      await refreshSession();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not save profile.");
     } finally {
       setPending(false);
     }
+  }
+
+  if (isHydrating) {
+    return (
+      <div className="w-full max-w-md animate-pulse space-y-4 px-1 py-2" aria-busy="true">
+        <div className="h-12 w-12 rounded-full bg-neutral-200" />
+        <div className="h-4 w-40 rounded bg-neutral-200" />
+        <div className="h-10 w-full rounded-xl bg-neutral-200" />
+      </div>
+    );
   }
 
   if (!session) {
