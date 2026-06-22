@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import type { SearchLocationHit } from "@/features/restaurants/store/mapExplore.store";
-import { MAPS_API_PATH } from "@/lib/maps/mapsApi";
+import { getMapsApiUrl } from "@/lib/maps/mapsApi";
 
 export function useSearchLocationGeocode(
   query: string,
@@ -23,7 +23,7 @@ export function useSearchLocationGeocode(
     const timer = window.setTimeout(async () => {
       try {
         const res = await fetch(
-          `${MAPS_API_PATH}?action=geocode&q=${encodeURIComponent(t)}`,
+          `${getMapsApiUrl()}?action=geocode&q=${encodeURIComponent(t)}`,
           {
             signal: ac.signal,
           },

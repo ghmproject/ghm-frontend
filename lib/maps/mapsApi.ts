@@ -1,5 +1,9 @@
-/** Single Vercel serverless function for all map proxy APIs. */
-export const MAPS_API_PATH = "/api/maps";
+import { env } from "@/config/env";
+
+/** Map proxy API on the Express backend (keeps Vercel serverless count at zero). */
+export function getMapsApiUrl(): string {
+  return `${env.apiBaseUrl.replace(/\/$/, "")}/api/maps`;
+}
 
 export type MapsApiAction =
   | "geocode"
