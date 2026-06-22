@@ -5,6 +5,6 @@ export const metadata: Metadata = {
   title: "Restaurant",
 };
 
-export default function RestaurantLayout({ children }: { children: React.ReactNode }) {
+export default function RestaurantDetailLayout({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<div className="min-h-[50dvh]" aria-hidden />}>{children}</Suspense>;
 }

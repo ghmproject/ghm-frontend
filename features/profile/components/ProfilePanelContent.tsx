@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { updateProfileName } from "@/api/routes/profile.api";
 import { ApiError } from "@/api/inspector";
-import { syncProfileNickname } from "@/features/auth/actions/auth";
+import { syncProfileNicknameClient } from "@/lib/auth/clientAuthApi";
 import { useSignOut } from "@/features/auth/hooks/useSignOut";
 import { routes } from "@/config/routes";
 import { useAuth } from "@/providers/AuthProvider";
@@ -67,7 +67,7 @@ export function ProfilePanelContent({
     setPending(true);
     try {
       await updateProfileName(nicknameDraft.trim());
-      const result = await syncProfileNickname(nicknameDraft);
+      const result = await syncProfileNicknameClient(nicknameDraft);
       if (result.error) {
         setError(result.error);
         return;

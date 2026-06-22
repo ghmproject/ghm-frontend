@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -31,10 +31,9 @@ function resolveInitialMealId(
   return soonest?.mealId ?? detail.meals[0]!.mealId;
 }
 
-export default function RestaurantPage() {
-  const params = useParams();
+export default function RestaurantDetailPage() {
   const searchParams = useSearchParams();
-  const id = String(params.id ?? "");
+  const id = String(searchParams.get("id") ?? "");
   const mealParam = searchParams.get("meal") ?? undefined;
 
   const query = useQuery({
@@ -65,6 +64,17 @@ export default function RestaurantPage() {
     const meal = detail.meals.find((m) => m.mealId === initialMealId) ?? detail.meals[0]!;
     document.title = `${detail.name} · ${formatPriceCompact(meal.price)} · ${siteConfig.name}`;
   }, [detail, initialMealId]);
+
+  if (!id) {
+    return (
+      <div className="mx-auto flex min-h-[50dvh] w-full max-w-lg flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="text-sm font-medium text-neutral-700">Restaurant not found.</p>
+        <Link href={routes.map} className="text-sm font-semibold text-[#FF5722]">
+          Back to map
+        </Link>
+      </div>
+    );
+  }
 
   if (query.isLoading) {
     return (

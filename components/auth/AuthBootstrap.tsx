@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 
 import { probeBackendSession } from "@/api/routes/auth.api";
 import {
-  needsBackendSessionSync,
-  syncSessionFromBackend,
-} from "@/features/auth/actions/auth";
+  fetchAuthBootstrap,
+  syncSessionFromBackendClient,
+} from "@/lib/auth/clientAuthApi";
 import { useAuth } from "@/providers/AuthProvider";
 
 /**
@@ -23,18 +23,18 @@ export function AuthBootstrap() {
 
     void (async () => {
       try {
-        const shouldProbe = await needsBackendSessionSync();
-        if (!shouldProbe) return;
+        const { pendingSync } = await fetchAuthBootstrap();
+        if (!pendingSync) return;
 
         const backend = await probeBackendSession();
         if (!backend) return;
 
-        const synced = await syncSessionFromBackend(backend.role);
+        const synced = await syncSessionFromBackendClient(backend.role);
         if (synced) {
           await refreshSession();
         }
       } catch {
-        // Server action or sync failed — ignore on public pages.
+        // API or sync failed — ignore on public pages.
       }
     })();
   }, [refreshSession]);

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-import { fetchCurrentSession } from "@/features/auth/actions/auth";
+import { fetchClientSession } from "@/lib/auth/clientAuthApi";
 import type { AuthSession } from "@/lib/auth/types";
 
 type AuthContextValue = {
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isHydrating, setIsHydrating] = useState(true);
 
   const refreshSession = useCallback(async () => {
-    const next = await fetchCurrentSession();
+    const next = await fetchClientSession();
     setSession(next);
     setIsHydrating(false);
   }, []);

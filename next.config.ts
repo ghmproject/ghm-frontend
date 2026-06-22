@@ -32,6 +32,11 @@ const nextConfig: NextConfig = {
         destination: "/map",
         permanent: false,
       },
+      {
+        source: "/restaurant/:id",
+        destination: "/restaurant/detail?id=:id",
+        permanent: false,
+      },
     ];
   },
   async headers() {

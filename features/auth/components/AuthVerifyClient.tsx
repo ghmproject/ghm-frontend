@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { verifyMagicLink } from "@/api/routes/auth.api";
 import { routes } from "@/config/routes";
-import { establishSessionAfterVerify } from "@/features/auth/actions/auth";
+import { establishSessionAfterVerifyClient } from "@/lib/auth/clientAuthApi";
 
 /**
  * Completes magic-link login and sends the user straight to the map.
@@ -34,7 +34,7 @@ export function AuthVerifyClient() {
           return;
         }
 
-        const result = await establishSessionAfterVerify(data.role, data.accessToken);
+        const result = await establishSessionAfterVerifyClient(data.role, data.accessToken);
         if (cancelled) return;
 
         if (!result.ok) {

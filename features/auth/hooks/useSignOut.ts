@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { logoutBackend } from "@/api/routes/auth.api";
 import { routes } from "@/config/routes";
-import { clearLocalSession } from "@/features/auth/actions/auth";
+import { clearClientSession } from "@/lib/auth/clientAuthApi";
 import { clearBackendAccessToken } from "@/lib/auth/backendAccessToken";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -19,7 +19,7 @@ export function useSignOut() {
     try {
       await logoutBackend().catch(() => undefined);
       clearBackendAccessToken();
-      await clearLocalSession();
+      await clearClientSession();
       await refreshSession();
       router.push(routes.login);
     } finally {
