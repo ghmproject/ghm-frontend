@@ -1,3 +1,5 @@
+import { RequireAuth } from "@/components/auth/RequireAuth";
+import { routes } from "@/config/routes";
 import { ProfileScreen } from "@/features/profile/components/ProfileScreen";
 
 export const metadata = {
@@ -5,5 +7,9 @@ export const metadata = {
 };
 
 export default function ProfilePage() {
-  return <ProfileScreen />;
+  return (
+    <RequireAuth returnTo={routes.profile}>
+      <ProfileScreen />
+    </RequireAuth>
+  );
 }

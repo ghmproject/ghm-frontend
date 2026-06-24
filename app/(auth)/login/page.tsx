@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { RedirectIfSignedIn } from "@/components/auth/RedirectIfSignedIn";
 import { siteConfig } from "@/config/site";
 import { routes } from "@/config/routes";
 import { LoginForm } from "@/features/auth/components/LoginForm";
@@ -33,7 +34,9 @@ export default function LoginPage() {
 
         <div className="mt-8">
           <Suspense fallback={<div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />}>
-            <LoginForm />
+            <RedirectIfSignedIn>
+              <LoginForm />
+            </RedirectIfSignedIn>
           </Suspense>
         </div>
       </div>

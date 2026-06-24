@@ -1,3 +1,5 @@
+import { RequireAuth } from "@/components/auth/RequireAuth";
+import { routes } from "@/config/routes";
 import { SubmissionsQueueScreen } from "@/features/submissions/components/SubmissionsQueueScreen";
 
 export const metadata = {
@@ -5,5 +7,9 @@ export const metadata = {
 };
 
 export default function SubmissionsPage() {
-  return <SubmissionsQueueScreen />;
+  return (
+    <RequireAuth adminOnly returnTo={routes.submissions}>
+      <SubmissionsQueueScreen />
+    </RequireAuth>
+  );
 }
